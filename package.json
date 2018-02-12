@@ -2,6 +2,8 @@
     "name"         : "node-red-bluemix-starter",
     "version"      : "0.8.0",
     "dependencies": {
+        "dotenv": "^2.0.0",
+        "watson-developer-cloud": "^2.40.0",
         "appmetrics-dash": "^3.2.1",
         "when": "~3.x",
         "nano": "6.2.x",

@@ -1,7 +1,9 @@
 Node-RED IBM Cloud Starter Application
 ====================================
 
-### Node-RED on IBM Cloud
+### Node-RED on IBM Cloud - Edited
+
+This is modified version of Node-Red boilerplate code. This basically combines the Node-Red and Simple Conversation repos.
 
 This repository is an example Node-RED application that can be deployed into
 IBM Cloud with only a couple clicks. Try it out for yourself right now by clicking:
