@@ -58,24 +58,6 @@ This Node.js app demonstrates the Conversation service in a simple chat interfac
 
 You can view a [demo][demo_url] of this app.
 
-## Before you begin
-
-* Create a Bluemix account
-    * [Sign up](https://console.ng.bluemix.net/registration/?target=/catalog/%3fcategory=watson) in Bluemix, or use an existing account. Your account must have available space for at least 1 app and 1 service.
-* Make sure that you have the following prerequisites installed:
-    * The [Node.js](https://nodejs.org/#download) runtime, including the [npm][npm_link] package manager
-    * The [Cloud Foundry][cloud_foundry] command-line client
-
-      Note: Ensure that you Cloud Foundry version is up to date
-
-## Installing locally
-
-If you want to modify the app or use it as a basis for building your own app, install it locally. You can then deploy your modified version of the app to the Bluemix cloud.
-
-### Getting the files
-
-Use GitHub to clone the repository locally, or [download the .zip file](https://github.com/watson-developer-cloud/conversation-simple/archive/master.zip) of the repository and extract the files.
-
 ### Setting up the Conversation service
 
 You can use an exisiting instance of the Conversation service. Otherwise, follow these steps.
@@ -109,38 +91,13 @@ You can use an exisiting instance of the Conversation service. Otherwise, follow
 
 1. Select **Everything (Intents, Entities, and Dialog)** and then click **Import**. The car dashboard workspace is created.
 
-### Configuring the app environment
+### Configuring the Conversation Bindings
 
-1. Copy or rename the `.env.example` file to `.env` (nothing before the dot).
+1. Bind the runtime with the created Watson Conversation Service
 
-1. Create a service key in the format `cf create-service-key <service_instance> <service_key>`. For example:
+1. Add the following flow to the node-red canvas
 
-    ```bash
-    cf create-service-key my-conversation-service myKey
-    ```
-
-1. Retrieve the credentials from the service key using the command `cf service-key <service_instance> <service_key>`. For example:
-
-    ```bash
-    cf service-key my-conversation-service myKey
-    ```
-
-   The output from this command is a JSON object, as in this example:
-
-    ```JSON
-    {
-      "password": "87iT7aqpvU7l",
-      "url": "https://gateway.watsonplatform.net/conversation/api",
-      "username": "ca2905e6-7b5d-4408-9192-e4d54d83e604"
-    }
-    ```
-
-1. Paste  the `password` and `username` values (without quotation marks) from the JSON into the `CONVERSATION_PASSWORD` and `CONVERSATION_USERNAME` variables in the `.env` file. For example:
-
-    ```
-    CONVERSATION_USERNAME=ca2905e6-7b5d-4408-9192-e4d54d83e604
-    CONVERSATION_PASSWORD=87iT7aqpvU7l
-    ```
+[{"id":"f2f2649a.0d0d98","type":"debug","z":"39a2c5e9.be8d52","name":"","active":true,"console":"false","complete":"false","x":450,"y":100,"wires":[]},{"id":"8745bb36.a6f1f","type":"http in","z":"39a2c5e9.be8d52","name":"","url":"/api/message","method":"post","upload":false,"swaggerDoc":"","x":110,"y":100,"wires":[["f2f2649a.0d0d98","da232bff.e970d8"]]},{"id":"9bee37d8.e4cad8","type":"watson-conversation-v1","z":"39a2c5e9.be8d52","name":"","workspaceid":"5cefbe2c-56c3-4d24-893a-298f0803ca12","multiuser":false,"context":false,"empty-payload":false,"default-endpoint":true,"service-endpoint":"https://gateway.watsonplatform.net/conversation/api","x":450,"y":220,"wires":[["1233dccc.41a72b","2ba45538.6baaaa"]]},{"id":"1233dccc.41a72b","type":"debug","z":"39a2c5e9.be8d52","name":"","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"false","x":690,"y":280,"wires":[]},{"id":"2ba45538.6baaaa","type":"http response","z":"39a2c5e9.be8d52","name":"","statusCode":"","headers":{},"x":650,"y":360,"wires":[]},{"id":"da232bff.e970d8","type":"function","z":"39a2c5e9.be8d52","name":"","func":"if(msg.payload.context!==undefined)\n    msg.params = {context:msg.payload.context}\n    \nmsg.payload = msg.payload.input.text\nreturn msg;","outputs":1,"noerr":0,"x":270,"y":220,"wires":[["9bee37d8.e4cad8"]]}]
 
 1. In your Bluemix console, open the Conversation service instance where you imported the workspace.
 
@@ -150,23 +107,8 @@ You can use an exisiting instance of the Conversation service. Otherwise, follow
 
 1. Click the ![Copy](readme_images/copy_icon.png) icon to copy the workspace ID to the clipboard.
 
-1. On the local system, paste the workspace ID into the WORKSPACE_ID variable in the `.env` file. Save and close the file.
+1. On Node-Red flow editor copy the workspace id to Watson Conversation node
 
-### Installing and starting the app
-
-1. Install the demo app package into the local Node.js runtime environment:
-
-    ```bash
-    npm install
-    ```
-
-1. Start the app:
-
-    ```bash
-    npm start
-    ```
-
-1. Point your browser to http://localhost:3000 to try out the app.
 
 ## Testing the app
 
@@ -202,42 +144,35 @@ After you have the app deployed and running, you can explore the source files an
 * Modify the .html file to change the appearance of the app page.
 * Use the Conversation tool to train the service for new intents, or to modify the dialog flow. For more information, see the [Conversation service documentation][docs_landing].
 
-## Deploying to Bluemix
+## Deploying to Kubernetes service 
 
 You can use Cloud Foundry to deploy your local version of the app to Bluemix.
 
-1. In the project root directory, open the `manifest.yml` file:
+1. In the project root directory, create Dockerfile:
 
-  * In the `applications` section of the `manifest.yml` file, change the `name` value to a unique name for your version of the demo app.
-  * In the `services` section, specify the name of the Conversation service instance you created for the demo app. If you do not remember the service name, use the `cf services` command to list all services you have created.
+We are going to run the node-red from the local filesystem with local settings
+By default it will expose 1880 port which will be mapped to Kubernets NodePort
+HEre is example of the dockerfile
 
-  The following example shows a modified `manifest.yml` file:
+FROM ibmcom/ibmnode
 
-  ```yml
-  ---
-  declared-services:
-   conversation-service:
-     label: conversation
-     plan: free
-  applications:
-  - name: conversation-simple-app-test1
-   command: npm start
-   path: .
-   memory: 256M
-   instances: 1
-   services:
-   - my-conversation-service
-   env:
-     NPM_CONFIG_PRODUCTION: false
-  ```
+ADD . /app
 
-1. Push the app to Bluemix:
+ENV NODE_ENV production
+ENV PORT 1880
 
-  ```bash
-  cf push
-  ```
-  Access your app on Bluemix at the URL specified in the command output.
+EXPOSE 1880
 
+WORKDIR "/app"
+
+RUN apt-get update --yes && apt-get upgrade --yes
+RUN npm install
+CMD node --max-old-space-size=384 node_modules/node-red/red.js --settings ./local-settings.js --userDir . flows.json
+
+2. Add the Docker build and Docker Deploy stages to your deliverypipeline
+You wil need to generate API keys for the deliverypipeline Manage/Security/Platform API Keys
+
+  
 ## Troubleshooting
 
 If you encounter a problem, you can check the logs for more information. To see the logs, run the `cf logs` command:
